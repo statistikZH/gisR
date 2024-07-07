@@ -6,12 +6,14 @@ editor: visual
 
 ## Was ist R
 
-R ist eine offene Programmiersprache welche ursprünglich für statistische Zwecke erstellt wurde.
+[R](https://www.r-project.org) ist eine offene Programmiersprache welche ursprünglich für statistische Zwecke erstellt wurde.
 
 Der Einsatzbereich von R hat sich heutzutage weit über die statistischen Anwendungen etabliert.
 
-Gerade für Data-Wrangling und Data-Engineering eignet sich diese Sprache sehr.
 
+::: {.callout-note}
+Gerade für Data-Wrangling und Data-Engineering kommt die Stärke von R besonders zu tragen.
+:::
 
 
 ## GIS mit R
@@ -20,11 +22,13 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt.
 Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
 
 Packages (gleich wie libraries in python)
-  - [sf](https://r-spatial.github.io/sf/)
-  - [terra](https://rspatial.github.io/terra/)
-  - [stars](https://r-spatial.github.io/stars/articles/stars1.html)
+  - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes
+  - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten
+  - [stars](https://r-spatial.github.io/stars/articles/stars1.html): Arbeiten mit Spatio-Temporal Arrays
   
-Links
+Bücher
+
+  [Spatial Data Science](https://r-spatial.org/book/)
 
 
 
