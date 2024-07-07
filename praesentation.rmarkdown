@@ -4,31 +4,24 @@ format: revealjs
 editor: visual
 ---
 
+
 ## Was ist R
-
-R ist eine offene Programmiersprache welche ursprünglich für statistische Zwecke erstellt wurde.
-
-Der Einsatzbereich von R hat sich heutzutage weit über die statistischen Anwendungen etabliert.
-
-Gerade für Data-Wrangling und Data-Engineering eignet sich diese Sprache sehr.
 
 
 
 ## GIS mit R
 
-Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt.
-Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
-
-Packages (gleich wie libraries in python)
-  - [sf](https://r-spatial.github.io/sf/)
-  - [terra](https://rspatial.github.io/terra/)
-  - [stars](https://r-spatial.github.io/stars/articles/stars1.html)
+Packages
+  - sf
+  - terra
+  - stars
   
 Links
 
 
 
 ## Einlsesen der Daten
+
 
 
 ```{r}
@@ -55,7 +48,9 @@ gemeinden <- sf::read_sf("Gemeindegrenzen_-OGD.gpkg", layer = "UP_GEMEINDEN_F")
 ```
 
 
+
 ## Analysieren der Daten
+
 
 ```{r}
 
@@ -83,7 +78,9 @@ geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem %>%
 
 ```
 
+
 ## Darstellen der Daten
+
 
 ```{r}
 # Hinzufügen der Gemeindepolygone
