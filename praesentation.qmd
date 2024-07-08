@@ -1,8 +1,18 @@
 ---
 title: "gisR"
 format: revealjs
+embed-resources: true
 editor: visual
 ---
+
+```{r, echo=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE)
+
+library(tidyverse)
+library(terra)
+library(tmap)
+library(exactextractr)
+```
 
 ## Was ist R
 
@@ -10,32 +20,23 @@ editor: visual
 
 Der Einsatzbereich von R hat sich heutzutage weit über die statistischen Anwendungen etabliert.
 
-
-::: {.callout-note}
+::: callout-note
 Gerade für Data-Wrangling und Data-Engineering kommt die Stärke von R besonders zu tragen.
 :::
 
-
 ## GIS mit R
 
-Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt.
-Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
+Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
 
-Packages (gleich wie libraries in python)
-  - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes
-  - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten
-  - [stars](https://r-spatial.github.io/stars/articles/stars1.html): Arbeiten mit Spatio-Temporal Arrays
-  
+Packages (gleich wie libraries in python) - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten - [stars](https://r-spatial.github.io/stars/articles/stars1.html): Arbeiten mit Spatio-Temporal Arrays
+
 Bücher
 
-  [Spatial Data Science](https://r-spatial.org/book/)
-
-
+[Spatial Data Science](https://r-spatial.org/book/)
 
 ## Einlsesen der Daten
 
-
-```{r}
+```{r eval=FALSE, echo=TRUE}
 
 # Lesen der Gebäudedaten
 gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv")
@@ -58,10 +59,9 @@ gemeinden <- sf::read_sf("Gemeindegrenzen_-OGD.gpkg", layer = "UP_GEMEINDEN_F")
 
 ```
 
-
 ## Analysieren der Daten
 
-```{r}
+```{r eval=FALSE, echo=TRUE}
 
 
 # Matchen der Gemeindeinformation an die GWR-Daten
@@ -89,7 +89,7 @@ geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem %>%
 
 ## Darstellen der Daten
 
-```{r}
+```{r eval=FALSE, echo=TRUE}
 # Hinzufügen der Gemeindepolygone
 # Herausfiltern der Seen und fixen der Polygone
 geb_ohne_wohnutzung_sf <- gemeinden %>% 
@@ -113,3 +113,178 @@ tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
 
 ```
 
+## Remote Sensing mit R
+
+> Extensiv genutzte Wiesen müssen mindestens einmal pro Jahr gemäht werden und das Schnittgut muss abgeführt werden. Die Flächen dürfen in Abhängigkeit der Zone jeweils **frühestens Mitte Juni** bis Mitte Juli genutzt werden[^1]
+
+[^1]: https://www.blw.admin.ch/blw/de/home/instrumente/direktzahlungen/biodiversitaetsbeitraege.html
+
+## Fragestellung
+
+Gibt es Landwirtschaftsflächen mit Schnittzeitpunkt 15. Juni, welche bereits vorher gemäht wurden?
+
+Workflow:[^2]
+
+[^2]: Vollständiger Workflow ist in den ./scripts/ beschrieben
+
+-   Sentinel-2 Bilder herunterladen
+-   NDVI berechnen
+-   Statistik für Landwirtschaftsflächen
+
+## STAC
+
+-   SpatioTemporal Asset Catalog[^3]
+
+-   Wir benutzen den Planetary Computer Data Catalog von Microsoft[^4]
+
+[^3]: The [STAC specification](https://stacspec.org/en/) is a common language to describe geospatial information, so it can more easily be worked with, indexed, and discovered.
+
+[^4]: [Planetary Computer](https://planetarycomputer.microsoft.com/catalog)
+
+## STAC
+
+```{r echo=TRUE, eval=TRUE}
+stac_source <- rstac::stac(
+  "https://planetarycomputer.microsoft.com/api/stac/v1",
+  force_version = "1.0.0"
+)
+collections_query <- stac_source %>%
+  rstac::collections()
+
+rstac::get_request(collections_query)
+
+```
+
+------------------------------------------------------------------------
+
+```{r echo=TRUE, eval=FALSE}
+# BBOX definieren
+ktzh_bbox <- "8.3576933717031, \
+              47.159435621727, \
+              8.9849509769386, \
+              47.694469737114"
+
+# STAC Query bauen
+stac_query <- rstac::stac_search(
+  q = stac_source,
+  collections = "sentinel-2-l2a",
+  datetime = "2023-06-10/2023-06-14",
+  bbox = ktzh_bbox
+) %>%
+  ext_filter(
+    `eo:cloud_cover` <= 20)
+
+```
+
+------------------------------------------------------------------------
+
+## Geodaten von WFS laden
+
+```{r echo=TRUE, eval=FALSE}
+wfs_zh <- "https://maps.zh.ch/wfs/OGDZHWFS"
+
+url <- httr::parse_url(wfs_zh)
+url$query <- list(service = "WFS",
+                  version = "2.0.0",
+                  request = "GetFeature",
+                  typename = "ms:ogd-0095_arv_basis_up_bezirke_f",
+                  outputformat = "geojson"
+                  )
+
+request <- httr::build_url(url)
+bezirke <- sf::read_sf(request)
+
+# Save Bezirke Layer
+sf::write_sf(bezirke, "geodata/Bezirke.gpkg")
+```
+
+## Raster
+
+-   4 Bänder -\> 1 `stars`-Objekt
+-   Visualisierung & Speicherung als 4-Band Raster
+
+| ![RGB](sentinel-2_RGB.png) | ![FCIR](sentinel-2_FCIR.png) |
+|:--------------------------:|:----------------------------:|
+|            RGB             |             FCIR             |
+
+## NDVI
+
+![[Quelle](https://www.researchgate.net/publication/341188077_Assessing_the_Effectiveness_of_Precision_Agriculture_Management_Systems_in_Mediterranean_Small_Farms)](https://www.researchgate.net/profile/Rui-Alexandre-Castanho/publication/341188077/figure/fig1/AS:888186381275136@1588771543369/Example-of-the-use-of-a-normalized-difference-vegetation-index-NDVI.png){.center fig-align="center"}
+
+## Rasterrechner
+
+$$
+NDVI = \frac{(NIR - R)}{NIR + R}
+$$
+
+```{r echo=TRUE, eval=FALSE}
+# Calculate NDVI using Red and NIR Bands -----------------------------------
+ndvi_fn <- function(b1, b2, b3, b4) (b4 - b1)/(b4 + b1)
+
+s2_ndvi <- st_apply(RGBI_zh, c("x", "y"), ndvi_fn)
+stars::write_stars(s2_ndvi, "geodata/ndvi_float32.tif", type = "Float32")
+```
+
+## Statistik
+
+```{r}
+# Load Polygon Layer
+LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") %>%
+  mutate(area = sf::st_area(geom))
+
+# Set aller Flächen, die erst am 15.06. sollten geschnitten werden:
+BF_Fl <- LWNutz_Diels %>%
+  filter(harvest_date == "15.06.") %>%
+  # Drop die kleinsten Flächen unter 500 m^2
+  filter(area > units::set_units(500, "m^2"))
+```
+
+### Zonale Statistik
+
+```{r}
+# Load Raster
+ndvi_rast <- terra::rast("geodata/ndvi_float32.tif")
+
+# Reproject it, so it does align with the Polygons
+ndvi_2056 <- terra::project(ndvi_rast, "EPSG:2056", method="bilinear")
+
+
+
+# calculate mean NDVI for every feature:
+BF_Fl$mean_ndvi <- exact_extract(ndvi_2056, BF_Fl, 'mean', progress=TRUE,
+                                 max_cells_in_memory = 1e4)
+
+```
+
+------------------------------------------------------------------------
+
+```{r}
+{tmap_mode("plot")
+tmap_options(check.and.fix = TRUE)
+
+left <- tm_shape(BF_Fl) +
+tm_polygons("mean_ndvi",
+            style = "fixed",
+            breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+            )
+right <- tm_shape(BF_Fl %>% 
+                    filter(mean_ndvi <= 0.3)) +
+  tm_polygons("mean_ndvi",
+              style = "fixed",
+              breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+              )
+
+tmap_arrange(
+  left,
+  right
+)}
+```
+
+```{r}
+BF_Fl %>% filter(mean_ndvi <= 0.3) %>% 
+  dplyr::select(c("blw_name","region","mean_ndvi", "area"))
+```
+
+------------------------------------------------------------------------
+
+![](ndvi-per-bff.png){.center fig-align="center"}
