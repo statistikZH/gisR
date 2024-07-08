@@ -53,12 +53,19 @@ geb_ohne_wohnutzung_sf <- gemeinden  |>
 geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf |>
   rmapshaper::ms_simplify(keep = 0.005)
 
+
+# Statisches Darstellung
+tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
+  tmap::tm_polygons("anteil")
+
+
 # Setzt tmap auf interaktiv
 tmap::tmap_mode("view")
 
-# Darstellen der Choropletenkarte
+# Interaktive Darstellung
 tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
   tmap::tm_polygons("anteil")
+
 
 
 
