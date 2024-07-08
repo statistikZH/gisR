@@ -1,8 +1,13 @@
 ---
 title: "gisR"
-format: revealjs
-embed-resources: true
+format:
+  revealjs: 
+    scrollable: true
+    embed-resources: true
 editor: visual
+execute: 
+  eval: false
+  echo: true
 ---
 
 ```{r, echo=FALSE, include=FALSE}
@@ -11,6 +16,7 @@ knitr::opts_chunk$set(echo=TRUE, warning=FALSE)
 library(tidyverse)
 library(terra)
 library(tmap)
+library(rmapshaper)
 library(exactextractr)
 ```
 
@@ -20,97 +26,137 @@ library(exactextractr)
 
 Der Einsatzbereich von R hat sich heutzutage weit über die statistischen Anwendungen etabliert.
 
-::: callout-note
+
+::: {.callout-note}
 Gerade für Data-Wrangling und Data-Engineering kommt die Stärke von R besonders zu tragen.
 :::
+
 
 ## GIS mit R
 
 Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
 
-Packages (gleich wie libraries in python) - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten - [stars](https://r-spatial.github.io/stars/articles/stars1.html): Arbeiten mit Spatio-Temporal Arrays
+::: {.callout-note}
+## Packages (gleich wie libraries in python)
 
-Bücher
+  - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes
+  
+  - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten
+  
+  - [stars](https://r-spatial.github.io/stars/articles/stars1.html):    Arbeiten mit Spatio-Temporal Arrays
+::: 
 
-[Spatial Data Science](https://r-spatial.org/book/)
+::: {.callout-note}  
+## Bücher
+
+  [Spatial Data Science](https://r-spatial.org/book/)
+:::
+
 
 ## Einlsesen der Daten
 
-```{r eval=FALSE, echo=TRUE}
+
+```{r}
 
 # Lesen der Gebäudedaten
-gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv")
+# gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv") |>
+#   dplyr::rename_all(tolower)
 
-# gwr <- readRDS("gwr.RDS")
-# 
+gwr <- readRDS("gwr.RDS") |> 
+  dplyr::rename_all(tolower)
+#
 # saveRDS(gwr, file = "gwr.RDS")
 
 # Umwandeln in ein sf-Objekt -> Geodatenobjekt
-gwr_sf <- sf::st_as_sf(gwr, coords = c("E.Gebaeudekoordinate", "N.Gebaeudekoordinate"), crs = 2056)
+gwr_sf <- sf::st_as_sf(gwr, coords = c("e.gebaeudekoordinate", "n.gebaeudekoordinate"), crs = 2056)
 
 # interaktives Darstellen
-mapview::mapview(head(gwr_sf, 20))
+mapview::mapview(head(gwr_sf, 100))
 
-# gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS", layer="ms:ogd-0095_arv_basis_up_gemeinden_seen_f")
-
-# Lesen des Gemeindelayers
-gemeinden <- sf::read_sf("Gemeindegrenzen_-OGD.gpkg", layer = "UP_GEMEINDEN_F")
-
+gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.0.0&Request=getfeature&TYPENAME=ms:ogd-0095_arv_basis_up_gemeinden_seen_f&outputformat=geojson") |>
+  dplyr::rename_all(tolower)
 
 ```
 
+
 ## Analysieren der Daten
 
-```{r eval=FALSE, echo=TRUE}
+```{r}
 
 
 # Matchen der Gemeindeinformation an die GWR-Daten
 # Die geometrie wird hier entfernt, da die Datenanalyse danach viel schneller läuft
-gwr_sf_gem <- gwr_sf %>% 
-  dplyr::select(Gebaeudekategorie_Code, Gebaeudekategorie_Bezeichnung) %>% 
-  sf::st_join(gemeinden) %>% 
+gwr_sf_gem <- gwr_sf |>
+  dplyr::select(gebaeudekategorie_code, gebaeudekategorie_bezeichnung) |>
+  sf::st_join(gemeinden) |>
   sf::st_drop_geometry()
 
 
 # Berechnung der Anteile der Geböude ohne Wohnnutzung am gesamten Gebäudebestand einer Gemeinde
-geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem %>% 
-  dplyr::group_by(Gebaeudekategorie_Code, Gebaeudekategorie_Bezeichnung, BFS, GEMEINDENAME) %>% 
-  dplyr::summarise(anzahl = n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::group_by(BFS, GEMEINDENAME) %>% 
-  dplyr::mutate(anteil = round(anzahl/sum(anzahl)*100, 2)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::filter(Gebaeudekategorie_Code == 1060)
+geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem |>
+  dplyr::group_by(gebaeudekategorie_code, gebaeudekategorie_bezeichnung, bfs, gemeindename) |>
+  dplyr::summarise(anzahl = dplyr::n()) |>
+  dplyr::ungroup() |>
+  dplyr::group_by(bfs, gemeindename) |>
+  dplyr::mutate(anteil = round(anzahl/sum(anzahl)*100, 2)) |>
+  dplyr::ungroup() |>
+  dplyr::filter(gebaeudekategorie_code == 1060)
 
 
 
 
 ```
 
-## Darstellen der Daten
+## Vorbereiten für das Darstellen
 
-```{r eval=FALSE, echo=TRUE}
+```{r}
 # Hinzufügen der Gemeindepolygone
 # Herausfiltern der Seen und fixen der Polygone
-geb_ohne_wohnutzung_sf <- gemeinden %>% 
-  dplyr::select(BFS) %>% 
-  dplyr::left_join(geb_ohne_wohnnutzung_pro_gem, by = "BFS") %>% 
-  dplyr::filter(BFS != 0) %>% 
-  sf::st_make_valid() %>% 
+geb_ohne_wohnutzung_sf <- gemeinden  |>
+  dplyr::select(bfs) |>
+  dplyr::left_join(geb_ohne_wohnnutzung_pro_gem, by = "bfs") |>
+  dplyr::filter(bfs != 0) |>
+  sf::st_make_valid() |>
   # tmap vewendet die erste Spalte als Bezeichner, deshalb hier die Änderung in der Spaltenanordnung
-  dplyr::select(GEMEINDENAME, dplyr::everything())
+  dplyr::select(gemeindename, dplyr::everything())
 
 
-geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf %>% 
+geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf |>
   rmapshaper::ms_simplify(keep = 0.005)
+
+```
+
+## Statissches Darstellen der Daten
+
+
+```{r, eval = TRUE}
+
+## Nur für Präsentation!
+geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("data.RDS"))
+
+# Statisches Darstellung
+tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
+    tmap::tm_polygons("anteil")
+
+
+
+
+
+```
+
+## Interaktives Darstellen der Daten
+
+```{r, eval = TRUE}
+
+## Nur für Präsentation!
+geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("data.RDS"))
 
 # Setzt tmap auf interaktiv
 tmap::tmap_mode("view")
 
-# Darstellen der Choropletenkarte
+# Interaktive Darstellung
 tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
     tmap::tm_polygons("anteil")
-
 ```
 
 ## Remote Sensing mit R
