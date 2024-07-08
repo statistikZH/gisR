@@ -26,35 +26,31 @@ library(exactextractr)
 
 Der Einsatzbereich von R hat sich heutzutage weit über die statistischen Anwendungen etabliert.
 
-
-::: {.callout-note}
+::: callout-note
 Gerade für Data-Wrangling und Data-Engineering kommt die Stärke von R besonders zu tragen.
 :::
-
 
 ## GIS mit R
 
 Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun sehr einfach GIS-Prozesse mit Datenanalyse verbinden und es ist kein Medienbruch mehr nötig.
 
-::: {.callout-note}
+::: callout-note
 ## Packages (gleich wie libraries in python)
 
-  - [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes
-  
-  - [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten
-  
-  - [stars](https://r-spatial.github.io/stars/articles/stars1.html):    Arbeiten mit Spatio-Temporal Arrays
-::: 
+-   [sf](https://r-spatial.github.io/sf/): Arbeiten mit Feature Classes
 
-::: {.callout-note}  
-## Bücher
+-   [terra](https://rspatial.github.io/terra/): Arbeiten mit Raster-Daten
 
-  [Spatial Data Science](https://r-spatial.org/book/)
+-   [stars](https://r-spatial.github.io/stars/articles/stars1.html): Arbeiten mit Spatio-Temporal Arrays
 :::
 
+::: callout-note
+## Bücher
+
+[Spatial Data Science](https://r-spatial.org/book/)
+:::
 
 ## Einlsesen der Daten
-
 
 ```{r}
 
@@ -77,7 +73,6 @@ gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.
   dplyr::rename_all(tolower)
 
 ```
-
 
 ## Analysieren der Daten
 
@@ -127,7 +122,6 @@ geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf |>
 ```
 
 ## Statissches Darstellen der Daten
-
 
 ```{r, eval = TRUE}
 
@@ -194,7 +188,7 @@ stac_source <- rstac::stac(
   "https://planetarycomputer.microsoft.com/api/stac/v1",
   force_version = "1.0.0"
 )
-collections_query <- stac_source %>%
+collections_query <- stac_source |>
   rstac::collections()
 
 rstac::get_request(collections_query)
@@ -216,7 +210,7 @@ stac_query <- rstac::stac_search(
   collections = "sentinel-2-l2a",
   datetime = "2023-06-10/2023-06-14",
   bbox = ktzh_bbox
-) %>%
+) |>
   ext_filter(
     `eo:cloud_cover` <= 20)
 
@@ -255,7 +249,7 @@ sf::write_sf(bezirke, "geodata/Bezirke.gpkg")
 
 ## NDVI
 
-![[Quelle](https://www.researchgate.net/publication/341188077_Assessing_the_Effectiveness_of_Precision_Agriculture_Management_Systems_in_Mediterranean_Small_Farms)](https://www.researchgate.net/profile/Rui-Alexandre-Castanho/publication/341188077/figure/fig1/AS:888186381275136@1588771543369/Example-of-the-use-of-a-normalized-difference-vegetation-index-NDVI.png){.center fig-align="center"}
+![[Quelle](https://www.researchgate.net/publication/341188077_Assessing_the_Effectiveness_of_Precision_Agriculture_Management_Systems_in_Mediterranean_Small_Farms)](NDVI.png){.center fig-align="center"}
 
 ## Rasterrechner
 
@@ -275,15 +269,17 @@ stars::write_stars(s2_ndvi, "geodata/ndvi_float32.tif", type = "Float32")
 
 ```{r}
 # Load Polygon Layer
-LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") %>%
+LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") |>
   mutate(area = sf::st_area(geom))
 
 # Set aller Flächen, die erst am 15.06. sollten geschnitten werden:
-BF_Fl <- LWNutz_Diels %>%
-  filter(harvest_date == "15.06.") %>%
+BF_Fl <- LWNutz_Diels |>
+  filter(harvest_date == "15.06.") |>
   # Drop die kleinsten Flächen unter 500 m^2
   filter(area > units::set_units(500, "m^2"))
 ```
+
+---
 
 ### Zonale Statistik
 
@@ -313,7 +309,7 @@ tm_polygons("mean_ndvi",
             style = "fixed",
             breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
             )
-right <- tm_shape(BF_Fl %>% 
+right <- tm_shape(BF_Fl |> 
                     filter(mean_ndvi <= 0.3)) +
   tm_polygons("mean_ndvi",
               style = "fixed",
@@ -324,13 +320,18 @@ tmap_arrange(
   left,
   right
 )}
+# TODO Plots
 ```
 
+
+
 ```{r}
-BF_Fl %>% filter(mean_ndvi <= 0.3) %>% 
+# TODO table
+BF_Fl |> filter(mean_ndvi <= 0.3) |> 
   dplyr::select(c("blw_name","region","mean_ndvi", "area"))
 ```
 
 ------------------------------------------------------------------------
 
+### Verteilung
 ![](ndvi-per-bff.png){.center fig-align="center"}
