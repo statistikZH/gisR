@@ -1,17 +1,15 @@
-library(stars)
+library(sf)
+library(terra)
 # source("scripts/03_loadSaveRasters.R")
+RGBI_zh <- terra::rast("geodata/RGBI_terra_2056.tif")
 
 # We take a 4 Band Raster as stars object and calculate the NDVI
 str(RGBI_zh)
 
-# Calculate NDVI using Red and NIR Bands -----------------------------------
-ndvi_fn <- function(b1, b2, b3, b4) (b4 - b1)/(b4 + b1)
 
-s2_ndvi <- st_apply(RGBI_zh, c("x", "y"), ndvi_fn)
-stars::write_stars(s2_ndvi,
-                   "geodata/ndvi_float32.tif", type = "Float32")
+# calculate NDVI using the red (band 1) and nir (band 4) bands
+sent2_ndvi <- (RGBI_zh[[4]] - RGBI_zh[[1]]) / (RGBI_zh[[4]] + RGBI_zh[[1]])
+sent2_ndvi |> terra::writeRaster("geodata/ndvi_terra.tif")
 
-plot(s2_ndvi)
-hist(s2_ndvi)
-
-# terra::plotRGB(terra::rast(s2_ndvi), scale = 45000, stretch="lin")
+plot(sent2_ndvi)
+hist(sent2_ndvi)
