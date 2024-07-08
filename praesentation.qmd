@@ -50,10 +50,10 @@ gwr_sf <- sf::st_as_sf(gwr, coords = c("E.Gebaeudekoordinate", "N.Gebaeudekoordi
 # interaktives Darstellen
 mapview::mapview(head(gwr_sf, 20))
 
-# gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS", layer="ms:ogd-0095_arv_basis_up_gemeinden_seen_f")
+gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.0.0&Request=getfeature&TYPENAME=ms:ogd-0095_arv_basis_up_gemeinden_seen_f&outputformat=geojson")
 
 # Lesen des Gemeindelayers
-gemeinden <- sf::read_sf("Gemeindegrenzen_-OGD.gpkg", layer = "UP_GEMEINDEN_F")
+#gemeinden <- sf::read_sf("Gemeindegrenzen_-OGD.gpkg", layer = "UP_GEMEINDEN_F")
 
 
 ```
