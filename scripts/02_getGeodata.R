@@ -18,7 +18,7 @@ url$query <- list(service = "WFS",
 
 request <- build_url(url)
 request
-res <- httr::GET(request)
+# res <- httr::GET(request)
 
 
 # BEZIRKE -----------------------------------------------------------------
@@ -32,8 +32,10 @@ url$query <- list(service = "WFS",
 
 request <- build_url(url)
 bezirke <- read_sf(request)
+
 # Save Bezirke Layer
 write_sf(bezirke, "geodata/Bezirke.gpkg")
+
 # Save die Grenze des KTZH
 write_sf(st_union(bezirke), "geodata/GrenzeKTZH.gpkg")
 
@@ -60,11 +62,10 @@ lwnutz_dielsdorf <- read_sf(request) |>
   st_cast("GEOMETRYCOLLECTION") |>
   st_collection_extract("POLYGON")
 
-
 # Intersect and save it
 lwnutz_dielsdorf |>
-  filter(st_intersects(dielsdorf, sparse=FALSE)[1,]) |>
-  write_sf("geodata/LWNutz_Dielsdorf.gpkg")
+  filter(lengths(st_intersects(geometry, dielsdorf)) > 0) |>
+  write_sf(("geodata/LWNutz_Dielsdorf.gpkg"))
 
 
 # Gemeindegrenzen ----------------------------------------------------------

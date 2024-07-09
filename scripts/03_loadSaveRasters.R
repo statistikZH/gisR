@@ -13,28 +13,24 @@ extracted_elements <- storage_pattern_list[4:14]
 # Prepend "geodata"
 prepended_elements <- c("geodata", extracted_elements)
 
+# List all Paths for the 4 Bands in the 10m-Resolution Folder
 single_files <- list.files(file.path(paste0(c(prepended_elements, "R10m"),
                                             collapse = "/")),
                            full.names = TRUE)
 
-r = rast(single_files)
-# terra::plotRGB(r, r=3, g=2, b=1, stretch="lin")
-
-# rasters = read_stars(single_files, proxy = TRUE, along = "band")
-# terra::rast(rasters) |> plotRGB(r=3, g=2, b=1, stretch="lin")
-
+Raster = rast(single_files)
+# terra::plotRGB(Raster, r=3, g=2, b=1, stretch="lin")
 
 # mask and clip
 # RGBI_zh <- st_crop(rasters, ktzh |> st_transform(st_crs(rasters)))
-RGBI_zh <- crop(r, ktzh_UTM32)
+RGBI_zh <- crop(Raster, ktzh_UTM32)
 RGBI_zh <- mask(RGBI_zh, ktzh_UTM32) |>
   project("EPSG:2056")
 
-# terra::plot(RGBI_zh)
-# terra::rast(RGBI_zh) |> plotRGB(r=3, g=2, b=1, stretch="lin")
+# plot(RGBI_zh)
+# one could also stretch the values:
+# stretch(RGBI_zh, minq=0.02, maxq=0.98, minv=0, maxv=16384) |>
+#   plotRGB(r=3, g=2, b=1)
 
-# save RGBI To File:
-# system.time(stars::write_stars(RGBI_zh, "geodata/RGBI.tif", type = "UInt16",
-#                   NA_value = 0))
-
+# Write Raster to disk
 system.time(terra::writeRaster(RGBI_zh, "geodata/RGBI_terra_2056.tif"))
