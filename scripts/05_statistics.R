@@ -10,7 +10,7 @@ library(tmap)
 # Ziel: NDVI mean Pro LW Fläche -------------------------------------------
 
 # Load Polygon Layer
-LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") %>%
+LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") |>
   mutate(area = st_area(geom))
 
 hist(LWNutz_Diels$area,
@@ -19,12 +19,12 @@ hist(LWNutz_Diels$area,
      ylab = "Anzahl")
 
 # Erntezeitpunkte:
-LWNutz_Diels$harvest_date %>% unique()
+LWNutz_Diels$harvest_date |> unique()
 
 
 # Set aller Flächen, die erst am 15.06. sollten geschnitten werden:
-BF_Fl <- LWNutz_Diels %>%
-  filter(harvest_date == "15.06.") %>%
+BF_Fl <- LWNutz_Diels |>
+  filter(harvest_date == "15.06.") |>
   # Drop die kleinsten Flächen unter 100 m^2
   filter(area > units::set_units(500, "m^2"))
 
@@ -71,7 +71,7 @@ hist(BF_Fl$mean_ndvi,
      xlab = "NDVI",
      ylab = "Frequenz")
 
-tm_shape(BF_Fl %>% filter(mean_ndvi < 0.35)) +
+tm_shape(BF_Fl |> filter(mean_ndvi < 0.35)) +
   tm_polygons("mean_ndvi",
               style = "fixed",
               breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)

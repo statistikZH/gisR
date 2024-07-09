@@ -38,7 +38,7 @@ write_sf(bezirke, "geodata/Bezirke.gpkg")
 write_sf(st_union(bezirke), "geodata/GrenzeKTZH.gpkg")
 
 # Extrahieren eines Bezirks, Dielsdorf
-dielsdorf <- bezirke %>% filter(bezirk == "Dielsdorf")
+dielsdorf <- bezirke |> filter(bezirk == "Dielsdorf")
 
 # Bounding Box von Dielsdorf
 diels_box <- format_bbox(st_bbox(dielsdorf))
@@ -55,14 +55,14 @@ url$query <- list(service = "WFS",
 
 request <- build_url(url)
 
-lwnutz_dielsdorf <- read_sf(request) %>%
+lwnutz_dielsdorf <- read_sf(request) |>
   # GML kommen als Geometrycollection und Multisurface daher, wir wandeln sie um
-  st_cast("GEOMETRYCOLLECTION") %>%
+  st_cast("GEOMETRYCOLLECTION") |>
   st_collection_extract("POLYGON")
 
 
 # save it
-lwnutz_dielsdorf %>%
+lwnutz_dielsdorf |>
   write_sf("geodata/LWNutz_Dielsdorf.gpkg")
 
 

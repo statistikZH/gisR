@@ -26,7 +26,7 @@ rstac::get_request(stac_source)
 
 
 # List available Collections ----------------------------------------------
-collections_query <- stac_source %>%
+collections_query <- stac_source |>
   rstac::collections()
 
 available_collections <- rstac::get_request(collections_query)
@@ -57,7 +57,7 @@ stac_query <- rstac::stac_search(
   collections = "sentinel-2-l2a",
   datetime = "2023-06-10/2023-06-14",
   bbox = ktzh_bbox
-) %>%
+) |>
   ext_filter(
     `eo:cloud_cover` <= 20)
 
@@ -96,5 +96,5 @@ B03_url <- rstac::assets_url(executed_stac_query, "B03")
 B03_url
 
 ## We need this pattern again:
-storage_pattern_list <- B03_url %>%
-  str_split("/") %>% unlist()
+storage_pattern_list <- B03_url |>
+  str_split("/") |> unlist()
