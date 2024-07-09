@@ -3,7 +3,8 @@ library(purrr)
 
 # Helper to get a bbox-string from a bbox
 format_bbox <- function(bbox) {
-  bbox |>
+  formatted <- bbox |>
     map_chr(~ paste(.x, collapse = ",")) |>
-    paste(collapse = ",") |> return()
+    paste(collapse = ",")
+  return(formatted)
 }
