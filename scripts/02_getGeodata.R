@@ -61,8 +61,9 @@ lwnutz_dielsdorf <- read_sf(request) |>
   st_collection_extract("POLYGON")
 
 
-# save it
+# Intersect and save it
 lwnutz_dielsdorf |>
+  filter(st_intersects(dielsdorf, sparse=FALSE)[1,]) |>
   write_sf("geodata/LWNutz_Dielsdorf.gpkg")
 
 
