@@ -5,10 +5,7 @@ library(exactextractr)
 library(raster)
 library(tmap)
 
-
-
 # Ziel: NDVI mean Pro LW Fläche -------------------------------------------
-
 # Load Polygon Layer
 LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") |>
   mutate(area = st_area(geom))
@@ -20,7 +17,6 @@ hist(LWNutz_Diels$area,
 
 # Erntezeitpunkte:
 LWNutz_Diels$harvest_date |> unique()
-
 
 # Set aller Flächen, die erst am 15.06. sollten geschnitten werden:
 BF_Fl <- LWNutz_Diels |>
@@ -35,9 +31,6 @@ hist(BF_Fl$area,
 
 # Load Raster
 ndvi_rast <- terra::rast("geodata/ndvi_terra.tif")
-
-# # Reproject it, so it does align with the Polygons
-# ndvi_2056 <- terra::project(ndvi_rast, "EPSG:2056", method="bilinear")
 
 plot(ndvi_rast)
 

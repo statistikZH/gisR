@@ -1,5 +1,10 @@
 ---
 title: "gisR"
+author: Thomas Knecht, Ueli Mauch
+subtitle: GIS-Review
+date: "2024-07-11"
+date-format: long
+lang: de
 format:
   revealjs: 
     scrollable: true
@@ -9,6 +14,7 @@ execute:
   eval: false
   echo: true
 ---
+
 
 ## Was ist R
 
@@ -40,7 +46,7 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun
 [Spatial Data Science](https://r-spatial.org/book/)
 :::
 
-## Einlsesen der Daten
+## Einlesen der Daten
 
 ```{r}
 
@@ -111,7 +117,7 @@ geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf |>
 
 ```
 
-## Statissches Darstellen der Daten
+## Statisches Darstellen der Daten
 
 ```{r, eval = TRUE}
 
@@ -157,9 +163,9 @@ Workflow:[^2]
 
 [^2]: Vollständiger Workflow ist in den ./scripts/ beschrieben
 
--   Sentinel-2 Bilder herunterladen
+-   Sentinel-2 Daten herunterladen
 -   NDVI berechnen
--   Statistik für Landwirtschaftsflächen
+-   Statistik für Landwirtschaftsflächen errechnen
 
 ## STAC
 
@@ -173,7 +179,9 @@ Workflow:[^2]
 
 ## STAC
 
-```{r echo=TRUE, eval=TRUE}
+-   Collections abfragen
+
+```{r echo=TRUE, eval=FALSE}
 stac_source <- rstac::stac(
   "https://planetarycomputer.microsoft.com/api/stac/v1",
   force_version = "1.0.0"
@@ -185,7 +193,7 @@ rstac::get_request(collections_query)
 
 ```
 
-------------------------------------------------------------------------
+## STAC
 
 ```{r echo=TRUE, eval=FALSE}
 # BBOX definieren
@@ -206,7 +214,9 @@ stac_query <- rstac::stac_search(
 
 ```
 
-------------------------------------------------------------------------
+Filtern nach Gebiet, Zeitraum, Collection Sentinel-2-L2A. Bewölkung einschränken.
+
+Mehr zum Download in `scripts/dlFromSTAC.R`
 
 ## Geodaten von WFS laden
 
@@ -218,8 +228,7 @@ url$query <- list(service = "WFS",
                   version = "2.0.0",
                   request = "GetFeature",
                   typename = "ms:ogd-0095_arv_basis_up_bezirke_f",
-                  outputformat = "geojson"
-                  )
+                  outputformat = "geojson")
 
 request <- httr::build_url(url)
 bezirke <- sf::read_sf(request)
@@ -227,6 +236,8 @@ bezirke <- sf::read_sf(request)
 # Save Bezirke Layer
 sf::write_sf(bezirke, "geodata/Bezirke.gpkg")
 ```
+
+WFS GetFeature Request, am Beispiel der OGD Bezirksgrenzen
 
 ## Raster
 
@@ -242,9 +253,14 @@ sf::write_sf(bezirke, "geodata/Bezirke.gpkg")
 
 ## Rasterrechner
 
+-   4-Band Raster als Basis
+-   NDVI nach dieser Formel
+
 $$
-NDVI = \frac{(NIR - R)}{NIR + R}
+NDVI = \frac{NIR - R}{NIR + R}
 $$
+
+-   Berechnung simpel:
 
 ```{r echo=TRUE, eval=FALSE}
 # calculate NDVI using the red (band 1) and nir (band 4) bands
@@ -253,7 +269,10 @@ sent2_ndvi <- (RGBI_zh[[4]] - RGBI_zh[[1]]) / (RGBI_zh[[4]] + RGBI_zh[[1]])
 sent2_ndvi |> terra::writeRaster("geodata/ndvi_terra.tif")
 ```
 
-## Statistik
+## Statistik {.incremental}
+
+-   Nutzflächen auswählen, Feld `area` berechnen
+-   2 Filter anwenden
 
 ```{r eval=TRUE, echo=TRUE}
 # Load Polygon Layer
@@ -271,19 +290,43 @@ BF_Fl <- LWNutz_Diels |>
 
 ### Zonale Statistik
 
-```{r eval=TRUE}
-# Load Raster
-ndvi_rast <- terra::rast("geodata/ndvi_terra.tif")
+-   Statistik pro Nutzfläche, jeweils der `mean` wird berechnet
 
-# calculate mean NDVI for every feature:
-BF_Fl$mean_ndvi <- exactextractr::exact_extract(ndvi_rast, BF_Fl, 'mean', progress=TRUE,
+```{r echo=FALSE, eval=TRUE}
+sent2_ndvi <- terra::rast("geodata/ndvi_terra.tif")
+BF_Fl$mean_ndvi <- exactextractr::exact_extract(sent2_ndvi, BF_Fl, 'mean', progress=FALSE,
                                  max_cells_in_memory = 1e4)
+BF_Fl |> select(c(bfs_parz, area, mean_ndvi)) |> head(4)|> knitr::kable() |> kable_styling(font_size = 22)
+```
 
+### Verteilung
+
+![](img/ndvi-per-bff.png){.center fig-align="center"}
+
+
+### Map
+```{r eval=TRUE, echo=FALSE}
+tmap::tmap_mode("view")
+tmap::tmap_options(check.and.fix = TRUE)
+```
+
+```{r eval=TRUE, warning=FALSE}
+# Setzt tmap auf interaktiv
+border <- c(2669379, 1252226, 2684597, 1269716)
+breaks <- c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+
+tmap::tm_shape(BF_Fl, bbox = border) +
+tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks) +
+tmap::tm_shape(BF_Fl |> filter(mean_ndvi <= 0.4), bbox = border, name = "NDVI <= 0.4 ") +
+tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks, legend.show = FALSE)
 ```
 
 ------------------------------------------------------------------------
 
-```{r}
+
+```{r, eval=TRUE, echo=TRUE}
+# TODO
+
 tmap::tmap_mode("plot")
 tmap::tmap_options(check.and.fix = TRUE)
 border <- c(2669379, 1252226, 2684597, 1269716)
@@ -292,34 +335,43 @@ left <- tmap::tm_shape(BF_Fl,
 tmap::tm_polygons("mean_ndvi",
             style = "fixed",
             breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
-            )
-right <- tmap::tm_shape(BF_Fl |> 
-                    dplyr::filter(mean_ndvi <= 0.3),
+            ) +
+  tm_layout(title="ii")
+right <- tm_shape(BF_Fl |> 
+                    filter(mean_ndvi <= 0.4),
                   bbox = border) +
   tmap::tm_polygons("mean_ndvi",
               style = "fixed",
               breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
-              )
-
-tmap::tmap_arrange(
-  left,
-  right
-)
-# TODO Plots
-```
-
---- 
-
-```{r echo=TRUE, eval=TRUE}
-# TODO table
-BF_Fl |> dplyr::filter(`mean_ndvi` <= 0.3) |> 
-  dplyr::select(c("blw_name","region","mean_ndvi", "area")) |>
-  sf::st_drop_geometry() |> 
-  knitr::kable()
+  )
 ```
 
 ------------------------------------------------------------------------
 
-### Verteilung
+```{r eval=TRUE, warning=FALSE, echo=FALSE}
+plt <- tmap_arrange(
+  left,
+  right
+)
+plt |> tmap::tmap_save("img/tmp.png", width = 11, height = 7)
+```
 
-![](img/ndvi-per-bff.png){.center fig-align="center"}
+![](img/tmp.png)
+
+---
+
+```{r echo=TRUE, eval=TRUE}
+# TODO table
+BF_Fl |> dplyr::filter(`mean_ndvi` <= 0.4) |> 
+  dplyr::select(c("blw_name","region","mean_ndvi", "area")) |>
+  sf::st_drop_geometry() |> head(10) |> 
+  knitr::kable() |> kable_styling(font_size = 22)
+```
+
+------------------------------------------------------------------------
+
+
+
+
+## Fragen?
+
