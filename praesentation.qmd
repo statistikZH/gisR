@@ -54,17 +54,27 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun
 ```{r, eval = FALSE, echo = TRUE}
 
 # Lesen der Gebäudedaten
-gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv") |>
+gwr <- read.csv(paste0("https://www.web.statistik.zh.ch/ogd/daten/",
+                       "ressourcen/KTZH_00002022_00004064.csv")
+                ) |>
   dplyr::rename_all(tolower)
 
 
 # Umwandeln in ein sf-Objekt -> Geodatenobjekt
-gwr_sf <- sf::st_as_sf(gwr, coords = c("e.gebaeudekoordinate", "n.gebaeudekoordinate"), crs = 2056)
+gwr_sf <- sf::st_as_sf(
+  gwr, 
+  coords = c("e.gebaeudekoordinate", "n.gebaeudekoordinate"), 
+  crs = 2056
+)
 
 # interaktives Darstellen
 mapview::mapview(head(gwr_sf, 100))
 
-gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.0.0&Request=getfeature&TYPENAME=ms:ogd-0095_arv_basis_up_gemeinden_seen_f&outputformat=geojson") |>
+gemeinden <- sf::st_read(
+  paste0("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.0.0&",
+         "Request=getfeature&TYPENAME=ms:ogd-0095_arv_basis_up_gemeinden_seen_f&",
+         "outputformat=geojson")
+  ) |>
   dplyr::rename_all(tolower)
 
 ```
@@ -75,16 +85,26 @@ gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.
 
 
 # Matchen der Gemeindeinformation an die GWR-Daten
-# Die Geometrie wird hier entfernt, da die Datenanalyse danach viel schneller läuft
+# Die Geometrie wird hier entfernt, da die Datenanalyse danach 
+# viel schneller läuft
 gwr_sf_gem <- gwr_sf |>
-  dplyr::select(gebaeudekategorie_code, gebaeudekategorie_bezeichnung) |>
+  dplyr::select(
+    gebaeudekategorie_code, 
+    gebaeudekategorie_bezeichnung
+    ) |>
   sf::st_join(gemeinden) |>
   sf::st_drop_geometry()
 
 
-# Berechnung der Anteile der Gebäude ohne Wohnnutzung am gesamten Gebäudebestand einer Gemeinde
+# Berechnung der Anteile der Gebäude ohne Wohnnutzung 
+# am gesamten Gebäudebestand einer Gemeinde
 geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem |>
-  dplyr::group_by(gebaeudekategorie_code, gebaeudekategorie_bezeichnung, bfs, gemeindename) |>
+  dplyr::group_by(
+    gebaeudekategorie_code, 
+    gebaeudekategorie_bezeichnung, 
+    bfs, 
+    gemeindename
+  ) |>
   dplyr::summarise(anzahl = dplyr::n()) |>
   dplyr::ungroup() |>
   dplyr::group_by(bfs, gemeindename) |>
@@ -107,7 +127,8 @@ geb_ohne_wohnutzung_sf <- gemeinden  |>
   dplyr::left_join(geb_ohne_wohnnutzung_pro_gem, by = "bfs") |>
   dplyr::filter(bfs != 0) |>
   sf::st_make_valid() |>
-  # tmap vewendet die erste Spalte als Bezeichner, deshalb hier die Änderung in der Spaltenanordnung
+  # tmap vewendet die erste Spalte als Bezeichner, 
+  #deshalb hier die Änderung in der Spaltenanordnung
   dplyr::select(gemeindename, dplyr::everything())
 
 
@@ -358,7 +379,8 @@ right <- tmap::tm_shape(BF_Fl |>
               ) +
   tmap::tm_shape(gemeinden) +
   tmap::tm_borders(alpha = 0.4) +
-  tmap::tm_layout(title="NDVI <= 0.4") + tmap::tm_compass() +
+  tmap::tm_layout(title="NDVI <= 0.4") + 
+  tmap::tm_compass() +
   tmap::tm_scale_bar()
 
 plt <- tmap::tmap_arrange(left, right)
