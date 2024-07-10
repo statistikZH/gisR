@@ -40,9 +40,11 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun
 :::
 
 ::: callout-note
-## Bücher
+## Weiterführende Links
 
 [Spatial Data Science](https://r-spatial.org/book/)
+
+[R-Spatial](https://r-spatial.org)
 :::
 
 ## Einlesen der Daten
