@@ -45,6 +45,8 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun
 [Spatial Data Science](https://r-spatial.org/book/)
 
 [R-Spatial](https://r-spatial.org)
+
+[Geocomputation with R](https://r.geocompx.org/)
 :::
 
 ## Einlesen der Daten
@@ -73,14 +75,14 @@ gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.
 
 
 # Matchen der Gemeindeinformation an die GWR-Daten
-# Die geometrie wird hier entfernt, da die Datenanalyse danach viel schneller läuft
+# Die Geometrie wird hier entfernt, da die Datenanalyse danach viel schneller läuft
 gwr_sf_gem <- gwr_sf |>
   dplyr::select(gebaeudekategorie_code, gebaeudekategorie_bezeichnung) |>
   sf::st_join(gemeinden) |>
   sf::st_drop_geometry()
 
 
-# Berechnung der Anteile der Geböude ohne Wohnnutzung am gesamten Gebäudebestand einer Gemeinde
+# Berechnung der Anteile der Gebäude ohne Wohnnutzung am gesamten Gebäudebestand einer Gemeinde
 geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem |>
   dplyr::group_by(gebaeudekategorie_code, gebaeudekategorie_bezeichnung, bfs, gemeindename) |>
   dplyr::summarise(anzahl = dplyr::n()) |>
@@ -196,10 +198,13 @@ rstac::get_request(collections_query)
 
 ```{r echo=TRUE, eval=FALSE}
 # BBOX definieren
-ktzh_bbox <- "8.3576933717031, \
-              47.159435621727, \
-              8.9849509769386, \
-              47.694469737114"
+ktzh_bbox <- sf::read_sf("geodata/Gemeindegrenzen_-OGD.gpkg") |> 
+  sf::st_transform("EPSG:4326") |> 
+  sf::st_make_valid() |> 
+  sf::st_union() |> 
+  sf::st_bbox() |> 
+  format_bbox()
+  
 
 # STAC Query bauen
 stac_query <- rstac::stac_search(
@@ -368,11 +373,11 @@ plt |> tmap::tmap_save("img/twomaps.png", width = 11, height = 7)
 
 ```{r echo=TRUE, eval=TRUE}
 BF_Fl |> dplyr::filter(`mean_ndvi` <= 0.4) |> 
-  dplyr::select(c("blw_name","region","mean_ndvi", "area")) |>
+  dplyr::select(blw_name, region, mean_ndvi, area) |>
   sf::st_drop_geometry() |> head(10) |> 
   knitr::kable() |> kableExtra::kable_styling(font_size = 22)
 ```
 
 ------------------------------------------------------------------------
 
-## Fragen?
+## Diskussion
