@@ -10,16 +10,6 @@ execute:
   echo: true
 ---
 
-```{r, echo=FALSE, include=FALSE, eval=TRUE}
-knitr::opts_chunk$set(echo=TRUE, warning=FALSE)
-
-library(tidyverse)
-library(terra)
-library(tmap)
-library(rmapshaper)
-library(exactextractr)
-```
-
 ## Was ist R
 
 [R](https://www.r-project.org) ist eine offene Programmiersprache welche ursprünglich für statistische Zwecke erstellt wurde.
@@ -268,13 +258,13 @@ sent2_ndvi |> terra::writeRaster("geodata/ndvi_terra.tif")
 ```{r eval=TRUE, echo=TRUE}
 # Load Polygon Layer
 LWNutz_Diels <- sf::read_sf("geodata/LWNutz_Dielsdorf.gpkg") |>
-  mutate(area = sf::st_area(geom))
+  dplyr::mutate(area = sf::st_area(geom))
 
 # Set aller Flächen, die erst am 15.06. sollten geschnitten werden:
 BF_Fl <- LWNutz_Diels |>
-  filter(harvest_date == "15.06.") |>
+  dplyr::filter(harvest_date == "15.06.") |>
   # Drop die kleinsten Flächen unter 500 m^2
-  filter(area > units::set_units(500, "m^2"))
+  dplyr::filter(area > units::set_units(500, "m^2"))
 ```
 
 ------------------------------------------------------------------------
@@ -286,7 +276,7 @@ BF_Fl <- LWNutz_Diels |>
 ndvi_rast <- terra::rast("geodata/ndvi_terra.tif")
 
 # calculate mean NDVI for every feature:
-BF_Fl$mean_ndvi <- exact_extract(ndvi_rast, BF_Fl, 'mean', progress=TRUE,
+BF_Fl$mean_ndvi <- exactextractr::exact_extract(ndvi_rast, BF_Fl, 'mean', progress=TRUE,
                                  max_cells_in_memory = 1e4)
 
 ```
@@ -294,24 +284,24 @@ BF_Fl$mean_ndvi <- exact_extract(ndvi_rast, BF_Fl, 'mean', progress=TRUE,
 ------------------------------------------------------------------------
 
 ```{r}
-tmap_mode("plot")
-tmap_options(check.and.fix = TRUE)
+tmap::tmap_mode("plot")
+tmap::tmap_options(check.and.fix = TRUE)
 border <- c(2669379, 1252226, 2684597, 1269716)
-left <- tm_shape(BF_Fl,
+left <- tmap::tm_shape(BF_Fl,
                   bbox = border) +
-tm_polygons("mean_ndvi",
+tmap::tm_polygons("mean_ndvi",
             style = "fixed",
             breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
             )
-right <- tm_shape(BF_Fl |> 
-                    filter(mean_ndvi <= 0.3),
+right <- tmap::tm_shape(BF_Fl |> 
+                    dplyr::filter(mean_ndvi <= 0.3),
                   bbox = border) +
-  tm_polygons("mean_ndvi",
+  tmap::tm_polygons("mean_ndvi",
               style = "fixed",
               breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
               )
 
-tmap_arrange(
+tmap::tmap_arrange(
   left,
   right
 )
