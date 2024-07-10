@@ -154,31 +154,33 @@ tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
 
 ## Fragestellung
 
-Gibt es Landwirtschaftsflächen mit Schnittzeitpunkt 15. Juni, welche bereits vorher gemäht wurden?
+Gibt es Landwirtschaftsflächen[^2] mit Schnittzeitpunkt 15. Juni, welche bereits vorher gemäht wurden?
 
-Workflow:[^2]
+[^2]: Landwirtschaftliche Nutzungsflächen: [Geolion](https://geolion.zh.ch/geodatensatz/3172)
 
-[^2]: Vollständiger Workflow ist in den ./scripts/ beschrieben
+Workflow:[^3]
 
--   Sentinel-2 Daten herunterladen
+[^3]: Vollständiger Workflow ist in den ./scripts/ beschrieben
+
+-   Daten herunterladen
 -   NDVI berechnen
 -   Statistik für Landwirtschaftsflächen errechnen
 
 ## STAC
 
--   SpatioTemporal Asset Catalog[^3]
+-   SpatioTemporal Asset Catalog[^4]
 
--   Wir benutzen den Planetary Computer Data Catalog von Microsoft[^4]
+-   Wir benutzen den Planetary Computer Data Catalog von Microsoft[^5]
 
-[^3]: The [STAC specification](https://stacspec.org/en/) is a common language to describe geospatial information, so it can more easily be worked with, indexed, and discovered.
+[^4]: The [STAC specification](https://stacspec.org/en/) is a common language to describe geospatial information, so it can more easily be worked with, indexed, and discovered.
 
-[^4]: [Planetary Computer](https://planetarycomputer.microsoft.com/catalog)
+[^5]: [Planetary Computer](https://planetarycomputer.microsoft.com/catalog)
 
 ## STAC
 
 -   Collections abfragen
 
-```{r echo=TRUE, eval=FALSE}
+```{r echo=TRUE, eval=TRUE}
 stac_source <- rstac::stac(
   "https://planetarycomputer.microsoft.com/api/stac/v1",
   force_version = "1.0.0"
@@ -266,7 +268,7 @@ sent2_ndvi <- (RGBI_zh[[4]] - RGBI_zh[[1]]) / (RGBI_zh[[4]] + RGBI_zh[[1]])
 sent2_ndvi |> terra::writeRaster("geodata/ndvi_terra.tif")
 ```
 
-## Statistik {.incremental}
+## Statistik
 
 -   Nutzflächen auswählen, Feld `area` berechnen
 -   2 Filter anwenden
@@ -293,12 +295,17 @@ BF_Fl <- LWNutz_Diels |>
 sent2_ndvi <- terra::rast("geodata/ndvi_terra.tif")
 BF_Fl$mean_ndvi <- exactextractr::exact_extract(sent2_ndvi, BF_Fl, 'mean', progress=FALSE,
                                  max_cells_in_memory = 1e4)
-BF_Fl |> dplyr::select(c(bfs_parz, area, mean_ndvi)) |> head(4)|> knitr::kable() |> kableExtra::kable_styling(font_size = 22)
+BF_Fl |> dplyr::select(c(bfs_parz, area, mean_ndvi)) |> head(4)|> knitr::kable() |> 
+  kableExtra::kable_styling(font_size = 22)
 ```
+
+------------------------------------------------------------------------
 
 ### Verteilung
 
 ![](img/ndvi-per-bff.png){.center fig-align="center"}
+
+------------------------------------------------------------------------
 
 ### Map
 
@@ -320,44 +327,46 @@ tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks, legend.show = F
 
 ------------------------------------------------------------------------
 
-```{r, eval=TRUE, echo=TRUE}
-# TODO
-
+```{r, eval=TRUE, echo=FALSE, warning=FALSE}
 tmap::tmap_mode("plot")
 tmap::tmap_options(check.and.fix = TRUE)
 border <- c(2669379, 1252226, 2684597, 1269716)
+gemeinden <- sf::read_sf("geodata/Gemeindegrenzen_-OGD.gpkg") |> 
+  dplyr::filter(bezirksname == "Dielsdorf")
 left <- tmap::tm_shape(BF_Fl,
                   bbox = border) +
-tmap::tm_polygons("mean_ndvi",
+  tmap::tm_polygons("mean_ndvi",
             style = "fixed",
-            breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+            breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1),
+            title ="mean NDVI"
             ) +
-  tmap::tm_layout(title="ii")
+  tmap::tm_shape(gemeinden) +
+  tmap::tm_borders(alpha = 0.4) +
+  tmap::tm_layout(title="NDVI alle Werte")
 right <- tmap::tm_shape(BF_Fl |> 
                     dplyr::filter(mean_ndvi <= 0.4),
                   bbox = border) +
   tmap::tm_polygons("mean_ndvi",
               style = "fixed",
-              breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
-  )
+              breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1),
+              title ="mean NDVI"
+              ) +
+  tmap::tm_shape(gemeinden) +
+  tmap::tm_borders(alpha = 0.4) +
+  tmap::tm_layout(title="NDVI <= 0.4") + tmap::tm_compass() +
+  tmap::tm_scale_bar()
+
+plt <- tmap::tmap_arrange(left, right)
+
+plt |> tmap::tmap_save("img/twomaps.png", width = 11, height = 7)
+
 ```
 
-------------------------------------------------------------------------
-
-```{r eval=TRUE, warning=FALSE, echo=FALSE}
-plt <- tmap::tmap_arrange(
-  left,
-  right
-)
-plt |> tmap::tmap_save("img/tmp.png", width = 11, height = 7)
-```
-
-![](img/tmp.png)
+![](img/twomaps.png)
 
 ------------------------------------------------------------------------
 
 ```{r echo=TRUE, eval=TRUE}
-# TODO table
 BF_Fl |> dplyr::filter(`mean_ndvi` <= 0.4) |> 
   dplyr::select(c("blw_name","region","mean_ndvi", "area")) |>
   sf::st_drop_geometry() |> head(10) |> 
