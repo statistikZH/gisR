@@ -2,16 +2,25 @@
 Introduction to GIS with R / Presentation and use case for the Canton of Zurich
 
 
+# How to set up the project
+
+It is suggested to use RStudio to run this project.
+
+1. First [clone the repository](https://argoshare.is.ed.ac.uk/healthyr_book/clone-an-existing-github-project-to-new-rstudio-project.html) as described in the linked manual.
+
+2. Go to `scripts/00_setup.R` and run it (it installs the needed packages and loads the functions)
+
+
 # Scripts
 Run the scripts before knitting the presentation. Some files that are downloaded/calculated within the scripts are used by the quarto.
 
 ```
+├── 00_setup.R
 ├── 01_dlFromSTAC.R
 ├── 02_getGeodata.R
 ├── 03_loadSaveRasters.R
 ├── 04_calculateNDVI.R
 ├── 05_statistics.R
-└── functions.R
 ```
 
 - `01_dlFromSTAC`  

@@ -1,5 +1,4 @@
-library(sf)
-library(terra)
+
 # source("scripts/03_loadSaveRasters.R")
 RGBI_zh <- terra::rast("geodata/RGBI_terra_2056.tif")
 
@@ -11,5 +10,5 @@ str(RGBI_zh)
 sent2_ndvi <- (RGBI_zh[[4]] - RGBI_zh[[1]]) / (RGBI_zh[[4]] + RGBI_zh[[1]])
 sent2_ndvi |> terra::writeRaster("geodata/ndvi_terra.tif")
 
-plot(sent2_ndvi)
-hist(sent2_ndvi)
+raster::plot(sent2_ndvi)
+raster::hist(sent2_ndvi)

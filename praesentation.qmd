@@ -47,16 +47,12 @@ Seit einiger Zeit hat sich R im Bereich GIS weiterentwickelt. Es lässt sich nun
 
 ## Einlesen der Daten
 
-```{r}
+```{r, eval = FALSE, echo = TRUE}
 
 # Lesen der Gebäudedaten
-# gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv") |>
-#   dplyr::rename_all(tolower)
-
-gwr <- readRDS("gwr.RDS") |> 
+gwr <- read.csv("https://www.web.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00002022_00004064.csv") |>
   dplyr::rename_all(tolower)
-#
-# saveRDS(gwr, file = "gwr.RDS")
+
 
 # Umwandeln in ein sf-Objekt -> Geodatenobjekt
 gwr_sf <- sf::st_as_sf(gwr, coords = c("e.gebaeudekoordinate", "n.gebaeudekoordinate"), crs = 2056)
@@ -71,7 +67,7 @@ gemeinden <- sf::st_read("https://maps.zh.ch/wfs/OGDZHWFS?SERVICE=WFS&VERSION=2.
 
 ## Analysieren der Daten
 
-```{r}
+```{r, eval = FALSE,  echo = TRUE}
 
 
 # Matchen der Gemeindeinformation an die GWR-Daten
@@ -97,9 +93,9 @@ geb_ohne_wohnnutzung_pro_gem <- gwr_sf_gem |>
 
 ```
 
-## Vorbereiten für das Darstellen
+## Vorbereiten für die Karten
 
-```{r}
+```{r, eval = FALSE, echo = TRUE}
 # Hinzufügen der Gemeindepolygone
 # Herausfiltern der Seen und fixen der Polygone
 geb_ohne_wohnutzung_sf <- gemeinden  |>
@@ -116,12 +112,12 @@ geb_ohne_wohnnutzung_sf_generalized <- geb_ohne_wohnutzung_sf |>
 
 ```
 
-## Statisches Darstellen der Daten
+## Statische Karte
 
 ```{r, eval = TRUE}
 
 ## Nur für Präsentation!
-geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("data.RDS"))
+geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("extdata/data.RDS"))
 
 # Statisches Darstellung
 tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
@@ -133,12 +129,12 @@ tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
 
 ```
 
-## Interaktives Darstellen der Daten
+## Interaktive Karte
 
 ```{r, eval = TRUE}
 
 ## Nur für Präsentation!
-geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("data.RDS"))
+geb_ohne_wohnnutzung_sf_generalized <- readRDS(here::here("extdata/data.RDS"))
 
 # Setzt tmap auf interaktiv
 tmap::tmap_mode("view")
