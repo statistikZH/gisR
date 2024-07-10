@@ -152,31 +152,33 @@ tmap::tm_shape(geb_ohne_wohnnutzung_sf_generalized) +
 
 ## Fragestellung
 
-Gibt es Landwirtschaftsflächen mit Schnittzeitpunkt 15. Juni, welche bereits vorher gemäht wurden?
+Gibt es Landwirtschaftsflächen[^2] mit Schnittzeitpunkt 15. Juni, welche bereits vorher gemäht wurden?
 
-Workflow:[^2]
+[^2]: Landwirtschaftliche Nutzungsflächen: [Geolion](https://geolion.zh.ch/geodatensatz/3172)
 
-[^2]: Vollständiger Workflow ist in den ./scripts/ beschrieben
+Workflow:[^3]
 
--   Sentinel-2 Daten herunterladen
+[^3]: Vollständiger Workflow ist in den ./scripts/ beschrieben
+
+-   Daten herunterladen
 -   NDVI berechnen
 -   Statistik für Landwirtschaftsflächen errechnen
 
 ## STAC
 
--   SpatioTemporal Asset Catalog[^3]
+-   SpatioTemporal Asset Catalog[^4]
 
--   Wir benutzen den Planetary Computer Data Catalog von Microsoft[^4]
+-   Wir benutzen den Planetary Computer Data Catalog von Microsoft[^5]
 
-[^3]: The [STAC specification](https://stacspec.org/en/) is a common language to describe geospatial information, so it can more easily be worked with, indexed, and discovered.
+[^4]: The [STAC specification](https://stacspec.org/en/) is a common language to describe geospatial information, so it can more easily be worked with, indexed, and discovered.
 
-[^4]: [Planetary Computer](https://planetarycomputer.microsoft.com/catalog)
+[^5]: [Planetary Computer](https://planetarycomputer.microsoft.com/catalog)
 
 ## STAC
 
 -   Collections abfragen
 
-```{r echo=TRUE, eval=FALSE}
+```{r echo=TRUE, eval=TRUE}
 stac_source <- rstac::stac(
   "https://planetarycomputer.microsoft.com/api/stac/v1",
   force_version = "1.0.0"
