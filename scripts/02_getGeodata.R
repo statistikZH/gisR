@@ -1,3 +1,4 @@
+source("R/functions.R")
 
 
 # Get Data using WFS requests ---------------------------------------------
