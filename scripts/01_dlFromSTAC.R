@@ -1,17 +1,6 @@
-library(rstac)
-library(terra)
-library(sf)
-library(tidyverse)
 
-setwd(here::here())
 
-# Init folder if not existing
-if (!dir.exists("geodata")) {
-  print("geodata folder does not exist, will be created.")
-  dir.create("geodata")
-} else {
-  print("geodata folder already exists.")
-}
+
 
 # STAC Source -------------------------------------------------------------
 stac_source <- rstac::stac(
@@ -58,7 +47,7 @@ stac_query <- rstac::stac_search(
   datetime = "2023-06-10/2023-06-14",
   bbox = ktzh_bbox
 ) |>
-  ext_filter(
+  rstac::ext_filter(
     `eo:cloud_cover` <= 20)
 
 executed_stac_query <- rstac::get_request(stac_query)
@@ -97,4 +86,4 @@ B03_url
 
 ## We need this pattern again:
 storage_pattern_list <- B03_url |>
-  str_split("/") |> unlist()
+  stringr::str_split("/") |> unlist()

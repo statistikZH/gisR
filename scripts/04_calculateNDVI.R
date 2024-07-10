@@ -1,5 +1,4 @@
-library(sf)
-library(terra)
+
 # source("scripts/03_loadSaveRasters.R")
 RGBI_zh <- terra::rast("geodata/RGBI_terra_2056.tif")
 
