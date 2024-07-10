@@ -191,7 +191,7 @@ Workflow:[^2]
 
 -   Collections abfragen
 
-```{r echo=TRUE, eval=TRUE}
+```{r echo=TRUE, eval=FALSE}
 stac_source <- rstac::stac(
   "https://planetarycomputer.microsoft.com/api/stac/v1",
   force_version = "1.0.0"
@@ -203,7 +203,7 @@ rstac::get_request(collections_query)
 
 ```
 
-------------------------------------------------------------------------
+## STAC
 
 ```{r echo=TRUE, eval=FALSE}
 # BBOX definieren
@@ -309,18 +309,42 @@ BF_Fl$mean_ndvi <- exactextractr::exact_extract(sent2_ndvi, BF_Fl, 'mean', progr
 BF_Fl |> select(c(bfs_parz, area, mean_ndvi)) |> head(4)|> knitr::kable() |> kable_styling(font_size = 22)
 ```
 
+### Verteilung
+
+![](img/ndvi-per-bff.png){.center fig-align="center"}
+
+
+### Map
+```{r eval=TRUE, echo=FALSE}
+tmap::tmap_mode("view")
+tmap::tmap_options(check.and.fix = TRUE)
+```
+
+```{r eval=TRUE, warning=FALSE}
+# Setzt tmap auf interaktiv
+border <- c(2669379, 1252226, 2684597, 1269716)
+breaks <- c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+
+tmap::tm_shape(BF_Fl, bbox = border) +
+tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks) +
+tmap::tm_shape(BF_Fl |> filter(mean_ndvi <= 0.4), bbox = border, name = "NDVI <= 0.4 ") +
+tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks, legend.show = FALSE)
+```
+
 ------------------------------------------------------------------------
 
-```{r, eval=TRUE}
-{tmap::tmap_mode("plot")
-tmap_options(check.and.fix = TRUE)
+```{r, eval=TRUE, echo=TRUE}
+# TODO
+tmap::tmap_mode("plot")
+tmap::tmap_options(check.and.fix = TRUE)
 border <- c(2669379, 1252226, 2684597, 1269716)
 left <- tm_shape(BF_Fl,
                   bbox = border) +
 tm_polygons("mean_ndvi",
             style = "fixed",
             breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
-            )
+            ) +
+  tm_layout(title="ii")
 right <- tm_shape(BF_Fl |> 
                     filter(mean_ndvi <= 0.4),
                   bbox = border) +
@@ -328,18 +352,21 @@ right <- tm_shape(BF_Fl |>
               style = "fixed",
               breaks = c(-0.4, -0.2, 0, 0.2, 0.4, 1)
   )
-}
-
 ```
 
 ------------------------------------------------------------------------
 
-```{r eval=TRUE, warning=FALSE}
-{tmap_arrange(
+```{r eval=TRUE, warning=FALSE, echo=FALSE}
+plt <- tmap_arrange(
   left,
   right
-)}
+)
+plt |> tmap::tmap_save("img/tmp.png", width = 11, height = 7)
 ```
+
+![](img/tmp.png)
+
+---
 
 ```{r echo=TRUE, eval=TRUE}
 # TODO table
@@ -351,22 +378,8 @@ BF_Fl |> dplyr::filter(`mean_ndvi` <= 0.4) |>
 
 ------------------------------------------------------------------------
 
-### Verteilung
 
-![](img/ndvi-per-bff.png){.center fig-align="center"}
 
-```{r eval=TRUE, echo=FALSE}
-tmap::tmap_mode("view")
-tmap::tmap_options(check.and.fix = TRUE)
-```
 
-```{r eval=TRUE, collapse=TRUE}
-# Setzt tmap auf interaktiv
-border <- c(2669379, 1252226, 2684597, 1269716)
-breaks <- c(-0.4, -0.2, 0, 0.2, 0.4, 1)
+## Fragen?
 
-tmap::tm_shape(BF_Fl, bbox = border) +
-tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks) +
-tmap::tm_shape(BF_Fl |> filter(mean_ndvi <= 0.4), bbox = border, name = "NDVI <= 0.4 ") +
-tmap::tm_polygons("mean_ndvi", style = "fixed", breaks = breaks, legend.show = FALSE)
-```
