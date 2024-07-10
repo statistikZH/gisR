@@ -28,7 +28,7 @@ hist(BF_Fl$area,
 # Load Raster
 ndvi_rast <- terra::rast("geodata/ndvi_terra.tif")
 
-plot(ndvi_rast)
+raster::plot(ndvi_rast)
 
 # calculate mean NDVI for every feature:
 BF_Fl$mean_ndvi <- exactextractr::exact_extract(ndvi_rast, BF_Fl, 'mean', progress=TRUE,
